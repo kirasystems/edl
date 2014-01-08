@@ -3,7 +3,7 @@
     [clojure.java.jdbc :as j]
     [clojure.string :as string]
     [environ.core :refer [env]]
-    [edl.schema :refer [get-schema denomalized-schema]]))
+    [edl.schema :refer [get-schema denormalized-schema]]))
 
 (defn- validate-table
   [schema table]
@@ -43,7 +43,7 @@
 (defmacro load-schema
   [db schema-name]
   `(do
-     (def ~'schema (denomalized-schema (get-schema ~db ~schema-name)))
+     (def ~'schema (denormalized-schema (get-schema ~db ~schema-name)))
      (defmacro ~'get-record
        [db# table# pkey# & fields#]
        `(get-record ~~'schema ~db# ~table# ~pkey# ~fields#))))

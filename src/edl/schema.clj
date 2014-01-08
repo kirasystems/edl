@@ -47,7 +47,7 @@
     (for [t tables]
       (assoc t :primary-key (get pkeys (:table_name t))))))
 
-(defn denomalized-schema
+(defn denormalized-schema
   "Build a denormalized schema map with table names as first level keys."
   [schema]
   (let [tables (->> (tables-with-columns schema) (add-primary-keys schema))]
