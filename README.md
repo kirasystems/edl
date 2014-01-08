@@ -5,10 +5,10 @@ A library supporting SQL schema inspection with a DSL for synthesis of common en
 ## Introduction
 
 This library demonstrates how one can pull a schema from an SQL database using the
-INFORMATION_SCHEMA standard and use it to do compile time query synthesis and error checking.
+information_schema standard and use it to do compile time query synthesis and error checking.
 At this time it is a proof of concept and subject to change.
 
-Most popular SQL databases support INFORMATION_SCHEMA tables. However, support varies. For
+Most popular SQL databases support information_schema tables. However, support varies. For
 example, the H2 database does not support several common tables and instead defines it's
 own non-standard information_schema.constraints table. This library was designed to work
 with PostgreSQL.
