@@ -56,7 +56,7 @@ app=> (:primary-key (get pub/schema "users"))
 app=> (map first (:columns (get pub/schema "users")))
 ("email" "name" "id")
 
-;; Synthesizing queries.
+;; Synthesizing queries. Notice that the primary key is automatically discovered.
 app=> (macroexpand '(get-record db :users 1))
 (clojure.core/first (clojure.java.jdbc/query pub/db ["SELECT * FROM users WHERE id = ?" 1]))
 
