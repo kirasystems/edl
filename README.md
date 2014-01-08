@@ -11,7 +11,7 @@ At this time it is a proof of concept and subject to change.
 Most popular SQL databases support INFORMATION_SCHEMA tables. However, support varies. For
 example, the H2 database does not support several common tables and instead defines it's
 own non-standard information_schema.constraints table. This library was designed to work
-with PostgresQL.
+with PostgreSQL.
 
 Also note that do to the nature of compile time operation, this library poses challenges
 for unit testing. In particular, fixtures that modify the database will not work as if
