@@ -41,7 +41,8 @@ nil
 app.schema.public=> (def db "jdbc:postgresql://localhost:5432/edl_testdb")
 #'app.schema.public/db
 
-app.schema.public=> (edl/load-schema db "public") ; creates "schema" and "get-record" in current namespace
+;; creates "schema" and "get-record" in current namespace
+app.schema.public=> (edl/load-schema db "public")
 #'app.schema.public/get-record
 
 ;; We can then use it from our other namespaces.
