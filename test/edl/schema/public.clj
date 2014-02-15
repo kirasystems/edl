@@ -10,5 +10,5 @@
          :user        "testuser"
          :password    "testpass"})
 
-(load-schema db "public")
-
+(load-schema db "public"
+  :table-maps {categories [:categories [:description keyword] :id]})

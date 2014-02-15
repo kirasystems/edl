@@ -33,6 +33,9 @@
       (is (= 1 updated))
       (is (= (pub/get-record pub/db :users 3) {:id 3 :name "Han Solo" :email "solo@rebels.tt"})))))
 
+(deftest table-map
+  (testing "table-maps"
+    (is (= pub/categories {:biology 3, :math 2, :computer-science 1}))))
 
 (comment
   ;; These  cannot be tested in a traditional way as they trigger

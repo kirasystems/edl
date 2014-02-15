@@ -23,14 +23,17 @@
   [columns]
   (if (seq columns) (string/join "," (map name columns)) "*"))
 
+(defn primary-where
+  [schema table]
+  (str (get-in schema [table :primary-key :column_name]) " = ?"))
+
 (defmacro get-record
   "Get a database record by primary key."
   [schema db table pkey [columns]]
   (let [table (name table)]
     (validate-table schema table)
     (when columns (validate-columns schema table columns))
-    (let [pcol (get-in schema [table :primary-key :column_name])
-          q    (str "SELECT " (generate-columns columns) " FROM " table " WHERE " pcol " = ?")]
+    (let [q (str "SELECT " (generate-columns columns) " FROM " table " WHERE " (primary-where schema table))]
       `(first (j/query ~db [~q ~pkey])))))
 
 (defmacro get-field
@@ -39,8 +42,7 @@
   (let [table (name table), col (name column)]
     (validate-table schema table)
     (validate-column schema table col)
-    (let [pcol (get-in schema [table :primary-key :column_name])
-          q    (str "SELECT " col " FROM " table " WHERE " pcol " = ?")]
+    (let [q (str "SELECT " col " FROM " table " WHERE " (primary-where schema table))]
       `(~(keyword column) (first (j/query ~db [~q ~pkey]))))))
 
 (defmacro update-record!
@@ -49,14 +51,29 @@
   (let [table (name table)]
     (validate-table schema table)
     (validate-columns schema table (keys update-map))
-    (let [pcol  (get-in schema [table :primary-key :column_name])
-          where (str pcol " = ?")]
+    (let [where (primary-where schema table)]
       `(first (j/update! ~db ~(keyword table) ~update-map [~where ~pkey])))))
 
+(defn table-map
+  "Creates a map from a database table."
+  [schema db table key-column val-column]
+  (let [table (name table)
+        kcol  (name (if (vector? key-column) (first key-column) key-column))
+        vcol  (name (if (vector? val-column) (first val-column) val-column))]
+    (validate-table schema table)
+    (validate-column schema table kcol)
+    (validate-column schema table vcol)
+    (let [recs (j/query db [(str "SELECT " kcol ", " vcol " FROM " table)])
+          keys (map (if (vector? key-column) (comp (second key-column) (first key-column)) key-column) recs)
+          vals (map (if (vector? val-column) (comp (second val-column) (first val-column)) val-column) recs)]
+      (zipmap keys vals))))
+
 (defmacro load-schema
-  [db schema-name]
+  [db schema-name & {:keys [table-maps]}]
   `(do
      (def ~'schema (denormalized-schema (get-schema ~db ~schema-name)))
+     ~@(for [[sym spec] table-maps]
+         `(def ~sym (table-map ~'schema ~db ~@spec)))
      (defmacro ~'get-record
        [db# table# pkey# & columns#]
        `(get-record ~~'schema ~db# ~table# ~pkey# ~columns#))
