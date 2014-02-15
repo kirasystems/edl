@@ -68,18 +68,19 @@
           vals (map (if (vector? val-column) (comp (second val-column) (first val-column)) val-column) recs)]
       (zipmap keys vals))))
 
-(defmacro load-schema
-  [db schema-name & {:keys [table-maps]}]
+(defmacro defschema
+  [symbol db schema-name]
+  `(def ~symbol (denormalized-schema (get-schema ~db ~schema-name))))
+
+(defmacro create-dml
+  [symbol]
   `(do
-     (def ~'schema (denormalized-schema (get-schema ~db ~schema-name)))
-     ~@(for [[sym spec] table-maps]
-         `(def ~sym (table-map ~'schema ~db ~@spec)))
      (defmacro ~'get-record
        [db# table# pkey# & columns#]
-       `(get-record ~~'schema ~db# ~table# ~pkey# ~columns#))
+       `(get-record ~~symbol ~db# ~table# ~pkey# ~columns#))
      (defmacro ~'get-field
        [db# table# pkey# column#]
-       `(get-field ~~'schema ~db# ~table# ~pkey# ~column#))
+       `(get-field ~~symbol ~db# ~table# ~pkey# ~column#))
      (defmacro ~'update-record!
        [db# table# pkey# update-map#]
-       `(update-record! ~~'schema ~db# ~table# ~pkey# ~update-map#))))
+       `(update-record! ~~symbol ~db# ~table# ~pkey# ~update-map#))))
