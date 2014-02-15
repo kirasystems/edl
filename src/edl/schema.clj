@@ -4,32 +4,26 @@
     [clojure.pprint :refer [pprint]]
     [clojure.set :refer [join index]]))
 
-(defn get-table*
-  "Get a table from the information_schema views corresponding to a particular schema."
-  [db schema-name table]
-  (j/query db [(str "SELECT * FROM information_schema." (name table) " WHERE table_schema = ?") schema-name]))
+(defn get-tables
+  [dbm schema-name]
+  (j/result-set-seq (.getTables dbm nil schema-name nil (into-array String ["TABLE"]))))
 
-(def tables
-  [:tables
-   :table_constraints
-   :columns
-   :key_column_usage])
+(defn get-columns
+  [dbm schema-name]
+  (j/result-set-seq (.getColumns dbm nil schema-name nil nil)))
+
+(defn get-primary-keys
+  [dbm schema-name]
+  (j/result-set-seq (.getPrimaryKeys dbm nil schema-name nil)))
 
 (defn get-schema
   "Get a schema from a database."
   [db schema-name]
-  (reduce #(assoc %1 %2 (get-table* db schema-name %2)) {} tables))
-
-(defn- primary-key-records
-  [schema]
-  (join
-    (filter #(= "PRIMARY KEY" (:constraint_type %)) (:table_constraints schema))
-    (:key_column_usage schema)))
-
-(defn- primary-keys
-  [schema]
-  (let [pkeys (primary-key-records schema)]
-    (zipmap (map :table_name pkeys) (map :column_name pkeys))))
+  (with-open [c (j/get-connection db)]
+    (let [dbm (.getMetaData c)]
+      {:tables       (get-tables dbm schema-name)
+       :columns      (get-columns dbm schema-name)
+       :primary-keys (get-primary-keys dbm schema-name)})))
 
 (defn- column-map
   [t columns]
@@ -43,12 +37,26 @@
 
 (defn- add-primary-keys
   [schema tables]
-  (let [pkeys (primary-keys schema)]
+  (let [pkeys (:primary-keys schema)]
     (for [t tables]
-      (assoc t :primary-key (get pkeys (:table_name t))))))
+      (assoc t :primary-key (some #(if (= (:table_name t) (:table_name %)) %) pkeys)))))
 
 (defn denormalized-schema
   "Build a denormalized schema map with table names as first level keys."
   [schema]
   (let [tables (->> (tables-with-columns schema) (add-primary-keys schema))]
     (zipmap (map :table_name tables) tables)))
+
+(comment
+  (require '[clojure.java.jdbc :as j] '[clojure.pprint :refer [pprint]])
+  (def conn (j/get-connection db))
+  (def dbmeta (.getMetaData conn))
+  (j/result-set-seq (.getSchemas dbmeta))
+  (j/result-set-seq (.getTableTypes dbmeta))
+  (j/result-set-seq (.getTables dbmeta nil "public" nil (into-array String ["TABLE"])))
+  (pprint (j/result-set-seq (.getColumns dbmeta nil "public" nil nil)))
+  (pprint (j/result-set-seq (.getPrimaryKeys dbmeta nil "public" nil)))
+
+  (def schema (get-schema db "public"))
+  (pprint (denormalized-schema schema))
+  )
