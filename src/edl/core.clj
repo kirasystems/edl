@@ -25,7 +25,9 @@
 
 (defn primary-where
   [schema table]
-  (str (get-in schema [table :primary-key :column_name]) " = ?"))
+  (if-let [pkey (get-in schema [table :primary-key :column_name])]
+    (str pkey " = ?")
+    (throw (ex-info (str table " has no primary key") {:type :missing-primary-key :table table}))))
 
 (defmacro get-record
   "Get a database record by primary key."
